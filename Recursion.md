@@ -42,8 +42,28 @@ void hanoi （int n, int a, int b, int c) //From a to b
 ```
 **焚诀：不要思考“先有鸡还是先有蛋”的问题，把函数体当成库中已有函数直接调用，写完即逻辑自洽**
 
-## 4.排序问题
+## 4.排序问题(全排列)
 ```c
-   
+void Perm(int list[], int k, int m)
+{
+    if (k == m)
+    {
+         for(int i = 0; i <= m; i++)
+         {
+              cout << list[i] << " ";
+         }
+         cout << endl;
+    }
+    else
+    {
+         for(int i = k; i < m; i++)
+         {
+              Swap(list[k], list[i]); 
+              Perm(list, k + 1, m); 
+              Swap(list[k], list[i]); //回溯
+         }
+    }
+}
 
 
+  
