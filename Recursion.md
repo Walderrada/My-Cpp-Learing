@@ -1,5 +1,5 @@
 # Recursion
-## 1.Factorial
+## 1.Factorial阶乘函数
 ```c
 int factorial (int n)
 {
@@ -7,7 +7,7 @@ int factorial (int n)
     return n * factorial(n-1);
 }
 ```
-## 2.Fibonacci
+## 2.Fibonacci斐波那契数列
 ```c
 int Fibonacci(int n)
 {
