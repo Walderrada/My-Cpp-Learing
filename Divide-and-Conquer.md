@@ -1,5 +1,5 @@
-## Divide and Conquer 分治法
-# BinarySearch 二分搜索技术
+# Divide and Conquer 分治法
+## BinarySearch 二分搜索技术
 ```c
 int BinarySearch(int arr[], int n, int x){
         int left = 0, right = n - 1;
@@ -16,5 +16,5 @@ int BinarySearch(int arr[], int n, int x){
     }
 ```
 
-# 大整数乘法
+## 大整数乘法
 
