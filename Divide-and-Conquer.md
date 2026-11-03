@@ -76,6 +76,62 @@ else{
 }
 ```
 
+## QuickSort快速排序       
+```c    
+void QuickSort(int arr[], int first, int end){
+    if(first < end){
+        int pivot = partition(arr, first, end);
+        QuickSort(a[], first, pivot-1);
+        QuickSort(a[], pivot+1, end);
+    }
+}
+//划分函数（教材装逼写法）
+int Partition(int arr[], int first, int end){
+    int i = p, j = r + 1;
+    int temp = a[p];  //将最左边的元素设为基准值
+    while(true){
+    //初始：直接从基准值的下一个元素和数组最后一个元素开始比较    
+    while (a[++i] < x && i < r) ;   // 找左边大于等于 x 的数（只要条件满足，就一直空转，i++，j--）
+    while (a[--j] > x) ;            // 找右边小于等于 x 的数
+    if (i >= j) break;  //限制条件
+    swap(a[i], a[j]);   //满足条件就交换
+    }
+    a[p] = a[j]    //此时i=j
+    a[j] = temp;   //把基准值放在他最终正确的位置
+    return j;      //返回基准值索引
+}
+//划分函数的人类写法
+int Partition(Type a[], int p, int r) {
+    int i = p, j = r;
+    Type x = a[p]; // 基准值
+    
+    while (i < j) {
+        // 1. 从右向左找小于 x 的数
+        while (i < j && a[j] > x) {
+            j--;
+        }
+        // 2. 找到后，把 a[j] 扔到左边的坑 a[i] 里
+        if (i < j) {
+            a[i] = a[j];
+            i++;
+        }
+        
+        // 3. 从左向右找大于 x 的数
+        while (i < j && a[i] < x) {
+            i++;
+        }
+        // 4. 找到后，把 a[i] 扔到右边的坑 a[j] 里
+        if (i < j) {
+            a[j] = a[i];
+            j--;
+        }
+    }
+    a[i] = x; // 把基准值填回最后的坑
+    return i;
+}
+```
+
+## 线性时间选择
 
 
 
