@@ -131,7 +131,225 @@ int Partition(Type a[], int p, int r) {
 }
 ```
 
-## 线性时间选择
+# 线性时间选择        
+## 算法思路        
+问题：给定线性序集中n个元素和一个整数k，要求找出这n个元素中第k小的元素。        
+## 代码演示        
+```c
+// 插入排序 (用于处理小规模子数组)
+void insertionSort(vector<int>& arr, int left, int right) {
+    for (int i = left + 1; i <= right; i++) {
+        int key = arr[i];
+        int j = i - 1;
+        while (j >= left && arr[j] > key) {
+            arr[j + 1] = arr[j];
+            j--;
+        }
+        arr[j + 1] = key;
+    }
+}
+
+// 划分函数 (同快排，返回基准元素最终位置)
+int partition(vector<int>& arr, int left, int right, int pivot) {
+    int i;
+    for (i = left; i < right; i++) {
+        if (arr[i] == pivot) break;
+    }
+    swap(arr[i], arr[right]); // 把基准放到末尾
+
+    int storeIndex = left;
+    for (i = left; i < right; i++) {
+        if (arr[i] < pivot) {
+            swap(arr[i], arr[storeIndex]);
+            storeIndex++;
+        }
+    }
+    swap(arr[storeIndex], arr[right]); // 把基准放到正确位置
+    return storeIndex;
+}
+
+// 核心：线性时间选择
+int Select(vector<int>& arr, int left, int right, int k) {
+    if (right - left < 75) { //设置一个阈值，小于该阈值直接用简单排序
+        insertionSort(arr, left, right);
+        return arr[left + k]; 
+    }
+
+    // 1. 每 5 个一组，找中位数
+    for (int i = 0; i < (right - left - 4) / 5; i++) {
+        insertionSort(arr, left + i * 5, left + i * 5 + 4);
+        swap(arr[left + i], arr[left + i * 5 + 2]); // 把中位数换到前面
+    }
+
+    // 2. 递归寻找中位数的中位数 (完美的基准)
+    int mid = (right - left - 4) / 10;
+    int pivot = Select(arr, left, left + mid, mid);
+
+    // 3. 以 pivot 为基准划分
+    int pos = partition(arr, left, right, pivot);
+
+    // 4. 判断目标在左边还是右边
+    int num = pos - left + 1; // 基准的排名
+    if (k == num) return arr[pos];
+    else if (k < num) return Select(arr, left, pos - 1, k);
+    else return Select(arr, pos + 1, right, k - num);
+```
+
+# 最接近点对问题        
+```c
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <numeric>
+#include <vector>
+
+struct Point { double x, y; };
+
+static inline double dist2(const Point& a, const Point& b) {
+    double dx = a.x - b.x, dy = a.y - b.y;
+    return dx * dx + dy * dy;          // 全程比较平方，最后只开一次方
+}
+
+// px[l..r) 已按 x 升序；py 存放 px[l..r) 的下标且已按 y 升序。
+// 返回该区间内最近点对距离的平方。
+double closestPairRec(const std::vector<Point>& px, int l, int r,
+                      std::vector<int>& py) {
+    const double INF = std::numeric_limits<double>::infinity();
+    int n = r - l;
+
+    // 规模小直接暴力，同时把 py 排好（保证返回时契约仍成立）
+    if (n <= 3) {
+        double best = INF;
+        for (int i = l; i < r; ++i)
+            for (int j = i + 1; j < r; ++j)
+                best = std::min(best, dist2(px[i], px[j]));
+        std::sort(py.begin(), py.end(),
+                  [&](int a, int b) { return px[a].y < px[b].y; });
+        return best;
+    }
+
+    int m = l + n / 2;          // px[m] 是右半边的第一个点
+    double midx = px[m].x;      // 分割线
+
+    // 按归属拆分 py，两份仍按 y 有序
+    std::vector<int> yl, yr;
+    yl.reserve(m - l);
+    yr.reserve(r - m);
+    for (int id : py) (id < m ? yl : yr).push_back(id);
+
+    double d = std::min(closestPairRec(px, l, m, yl),
+                        closestPairRec(px, m, r, yr));
+
+    // 归并回 py：整体重新按 y 有序
+    std::merge(yl.begin(), yl.end(), yr.begin(), yr.end(), py.begin(),
+               [&](int a, int b) { return px[a].y < px[b].y; });
+
+    // 只保留严格落在宽 2d 条带内的点
+    std::vector<int> strip;
+    strip.reserve(py.size());
+    for (int id : py) {
+        double dx = px[id].x - midx;
+        if (dx * dx < d) strip.push_back(id);
+    }
+
+    // 条带内每个点只需向后看常数个（y 差一旦 >= d 就可以停）
+    for (size_t i = 0; i < strip.size(); ++i) {
+        for (size_t j = i + 1; j < strip.size(); ++j) {
+            double dy = px[strip[j]].y - px[strip[i]].y;
+            if (dy * dy >= d) break;               // 关键：break 不是 continue
+            d = std::min(d, dist2(px[strip[i]], px[strip[j]]));
+        }
+    }
+    return d;
+}
+
+// 返回最近点对距离；n < 2 返回 -1
+double closestPair(std::vector<Point> pts) {
+    int n = (int)pts.size();
+    if (n < 2) return -1.0;
+
+    std::sort(pts.begin(), pts.end(),
+              [](const Point& a, const Point& b) { return a.x < b.x; });
+
+    std::vector<int> py(n);
+    std::iota(py.begin(), py.end(), 0);
+    std::sort(py.begin(), py.end(),
+              [&](int a, int b) { return pts[a].y < pts[b].y; });
+
+    return std::sqrt(closestPairRec(pts, 0, n, py));
+}
+```
+*算法时间复杂度：O(nlogn)*        
+
+# 循环赛日程表        
+## 教材反人类代码
+```c        
+void table(int k, int **a){
+    int n = 1;
+    for (int i = 1; i <= k; i++)
+        n *= 2;
+    for (int i = 1; i <= n; i++)
+        a[1][i] = i;
+    int m = 1;
+    for (int s = 1; s <=k; s++){
+    n /= 2;
+    for (int t = 1; t <= n; t++){ 
+      for (int i = m+1; i< 2*m; i++){  //扩展行
+        for (int j = m+1; j <= 2*m; j++){ //扩展列 
+            a[i][j+(t-1)*m*2] = a[i-m][j+(t-1)*m*2-m]; //把左上数据复制到右下角
+            a[i][j+(t-1)*m*2-m] = a[i-m][j+(t-1)*m*2]; //把左下数据复制到右上角
+}
+        m *= 2;
+      }
+    }
+  }
+}
+```
+## 更加清晰的代码
+```c
+#include <iostream>
+using namespace std;
+
+int a[100][100]; // 定义二维数组，a[i][j]表示第i个选手在第j天遇到的对手
+
+// 核心函数：从左上角起点(x, y)开始，把一个边长为 m 的方阵复制扩展成边长为 2m 的方阵
+void copy(int x, int y, int m) {
+    // 对角线复制：左上 -> 右下
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < m; j++) {
+            a[x + i + m][y + j + m] = a[x + i][y + j];
+        }
+    }
+    // 右上角复制：左上 -> 右上（加上 m）
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < m; j++) {
+            a[x + i][y + j + m] = a[x + i][y + j] + m;
+        }
+    }
+    // 左下角复制：右上 -> 左下
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < m; j++) {
+            a[x + i + m][y + j] = a[x + i][y + j + m];
+        }
+    }
+}
+
+// 递归分治
+void solve(int x, int y, int n) {
+    if (n == 2) {
+        a[x][y] = x + 1; a[x][y+1] = x + 2;
+        a[x+1][y] = x + 2; a[x+1][y+1] = x + 1;
+        return;
+    }
+    solve(x, y, n / 2);              // 左上角
+    solve(x, y + n / 2, n / 2);      // 右上角
+    solve(x + n / 2, y, n / 2);      // 左下角
+    solve(x + n / 2, y + n / 2, n / 2); // 右下角
+    copy(x, y, n / 2);               // 合并
+}
+```
+
+
 
 
 
