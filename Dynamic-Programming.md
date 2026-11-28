@@ -191,7 +191,7 @@ int maxSubArray(vector<int>& nums) {
 ## 状态定义与转移方程
 dp[i][j]表示：将顶点vi到vj加上他们的弦vivj构成的凸多边形进行最优三角划分后，能得到的最小总权值。            
 枚举第三个顶点k，尝试把多边形分成三部分：                        
-dp[i][j] = min{dp[j][k] + dp[k][j] + w(i,k,j)}                        
+dp[i][j] = min<sub>i<k<j</sub>{dp[i][k] + dp[k+1][j] + w(i,k,j)}                        
 · dp[i][k]：左边子多边形的代价                        
 · dp[k][j]：右边子多边形的代价                        
 · w(i,k,j)：当前这个三角形vivkvj的权值。                        
