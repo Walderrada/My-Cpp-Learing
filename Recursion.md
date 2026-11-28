@@ -56,7 +56,7 @@ void Perm(int list[], int k, int m)
     }
     else
     {
-         for(int i = k; i < m; i++)
+         for(int i = k; i <= m; i++)
          {
               Swap(list[k], list[i]); 
               Perm(list, k + 1, m); 
