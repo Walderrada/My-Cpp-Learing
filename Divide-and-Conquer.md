@@ -1,51 +1,96 @@
-# Divide and Conquer 分治法
-## BinarySearch 二分搜索技术
+# BinarySearch 二分搜索技术        
+## 算法思想        
+每次将搜索区间缩小一半。通过比较目标值与区间中间值，直接舍弃不可能存在目标值的那一半。        
+前提条件：                
+· 数据必须存储在数组中。        
+· 数据必须是**有序**的。        
+
+## 代码演示        
 ```c
 int BinarySearch(int arr[], int n, int x){
         int left = 0, right = n - 1;
         while (left <= right) {
-            int mid = left + (right - left) / 2;
+            int mid = left + (right - left) / 2; //防止left + right溢出
             if (arr[mid] == x)
                 return mid;
             if (arr[mid] < x)
-                left = mid + 1;
+                left = mid + 1; //目标在右半区
             else
-                right = mid - 1;
+                right = mid - 1; //目标在左半区
         }
-        return -1; // Element not found
+        return -1; // 没找到
     }
 ```
 
-## 大整数乘法
-将n位二进制整数X和Y都分成两段，每段长n/2    
-- \(X = A \cdot 2^{n/2} + B\)        
-- \(Y = C \cdot 2^{n/2} + D\)       
-相乘展开后得：
-XY = (A * 2^(n/2) + B)(C * 2^(n/2) + D) = AC * 2^n + (AD + BC) * 2^(n/2) + BD
-     
-**复杂度分析**       
-按此式计算，需要进行四次n/2位整数的乘法、3次不超过2n位的整数加法，以及两次移位。所有加法和移位共用O(n)步运算     
-T(n) = 4T(n/2) + O(n) , n>1     
-得T(n) = O(n^2) 效率并未提升 
+## 复杂度分析         
+O(log n)        
 
-**优化计算**      
-写成另一种形式:     
-*XY = AC * 2^n  + ( (A-B)(D-C) + AC + BD ) * 2^(n/2) + BD*    
-只需要做3次乘法(  AC, BD, (A-B)(D-C) )、6次减法和两次移位    
-T(n) = 3T(n/2) + O(n) , n>1   
+                
+# 大整数乘法                
+将n位二进制整数X和Y都分成两段，每段长n/2            
+- \(X = A \cdot 2^{n/2} + B\)                
+- \(Y = C \cdot 2^{n/2} + D\)               
+相乘展开后得：                        
+XY = (A * 2^(n/2) + B)(C * 2^(n/2) + D) = AC * 2^n + (AD + BC) * 2^(n/2) + BD        
+                   
+按此式计算，需要进行4次n/2位整数的乘法；3次不超过2n位的整数加法，以及两次移位，所有加法和移位共用O(n)步运算          
+T(n) = 4T(n/2) + O(n) , n>1                     
+得T(n) = O(n^2) 效率并未提升                 
+
+## 优化计算                            
+**核心数学变形（Karatsuba算法）：AD + BC = (A+B) × (C+D) − AC − BD**                
+写成另一种形式:             
+*XY = AC * 2^n  + ( (A-B)(D-C) + AC + BD ) * 2^(n/2) + BD*  
+
+## 复杂度分析        
+只需要做3次乘法( AC, BD, (A-B)(D-C) )、6次减法和两次移位            
+T(n) = 3T(n/2) + O(n) , n>1           
 得T(n) = O(n^log3) = O(n^1.59)   
 效率显著提升   
 
-## 棋盘覆盖问题    
-原理：四分棋盘，确定一个特殊方格，L形骨牌占据特殊方格以外三个象限，直至简化为1×1棋盘     
-# cpp
+## 代码演示        
+```c
+// 简化版：假设传入的是两个相同长度的非负整数型数据（或前缀0对齐的字符串转化）
+long long karatsuba(long long x, long long y) {
+    // 递归终止条件：如果位数很少，直接相乘（或者用普通乘法）
+    if (x < 10 || y < 10) return x * y;
+
+    // 计算位数 n
+    int n = 1;
+    while (n < max(to_string(x).length(), to_string(y).length())) n *= 2;
+    int half = n / 2;
+
+    long long power = pow(10, half);
+
+    // 拆分高位和低位
+    long long a = x / power;  // 高位
+    long long b = x % power;  // 低位
+    long long c = y / power;
+    long long d = y % power;
+
+    // 核心：3 次递归乘法
+    long long z0 = karatsuba(b, d);             // BD
+    long long z2 = karatsuba(a, c);             // AC
+    long long z1 = karatsuba(a + b, c + d) - z0 - z2; // (A+B)(C+D) - AC - BD
+
+    // 合并结果：AC * 10^n + (AD+BC) * 10^(n/2) + BD
+    return z2 * pow(10, 2 * half) + z1 * power + z0;
+}
+```
+
+
+# 棋盘覆盖问题    
+原理：四分棋盘，确定一个特殊方格，L形骨牌占据特殊方格以外三个象限，直至简化为1×1棋盘
+
+## 代码演示
 ```c    
-void ChessBoard(int tr, int tc, int dr, int dc, int size){     //tr,tc为棋盘左上角坐标，dr,dc为特殊方格的行列，size是棋盘规格
-if (size == 1)
-return;    
-int t = tile++;    
-s = size/2; //好快的切割
-//覆盖左上角棋盘
+void ChessBoard(int tr, int tc, int dr, int dc, int size){        
+//tr,tc为棋盘左上角坐标，dr,dc为特殊方格的行列，size是棋盘规格        
+if (size == 1)        
+return;            
+int t = tile++;            
+s = size/2; //好快的切割        
+//覆盖左上角棋盘        
 if (dr < tr+s && dc < tc+s)
 ChessBoard(tr, tc, dr, dc, s);
 else{
@@ -76,60 +121,61 @@ else{
 }
 ```
 
-## QuickSort快速排序       
+## 复杂度分析
+递归方程 T(n) = 4T(n/2) + O(1)。                
+主定理解得：T(n) = O(n^2)。        
+空间复杂度：O(n^2)。需要一个二维数组来存储整个棋盘。        
+
+
+# 快速排序
+## 代码演示（双指针法）
 ```c    
-void QuickSort(int arr[], int first, int end){
-    if(first < end){
-        int pivot = partition(arr, first, end);
-        QuickSort(a[], first, pivot-1);
-        QuickSort(a[], pivot+1, end);
-    }
-}
-//划分函数（教材装逼写法）
-int Partition(int arr[], int first, int end){
-    int i = p, j = r + 1;
-    int temp = a[p];  //将最左边的元素设为基准值
-    while(true){
-    //初始：直接从基准值的下一个元素和数组最后一个元素开始比较    
-    while (a[++i] < x && i < r) ;   // 找左边大于等于 x 的数（只要条件满足，就一直空转，i++，j--）
-    while (a[--j] > x) ;            // 找右边小于等于 x 的数
-    if (i >= j) break;  //限制条件
-    swap(a[i], a[j]);   //满足条件就交换
-    }
-    a[p] = a[j]    //此时i=j
-    a[j] = temp;   //把基准值放在他最终正确的位置
-    return j;      //返回基准值索引
-}
-//划分函数的人类写法
-int Partition(Type a[], int p, int r) {
-    int i = p, j = r;
-    Type x = a[p]; // 基准值
+// Partition 函数：将数组划分为左右两部分（确定基准值）
+int partition(vector<int>& arr, int left, int right) {
+    // 1. 选取最左边的元素作为基准（Pivot）
+    int pivot = arr[left];
+    int i = left, j = right;
     
     while (i < j) {
-        // 1. 从右向左找小于 x 的数
-        while (i < j && a[j] > x) {
-            j--;
-        }
-        // 2. 找到后，把 a[j] 扔到左边的坑 a[i] 里
-        if (i < j) {
-            a[i] = a[j];
-            i++;
-        }
+        // 2. 从右往左找第一个小于 pivot 的元素
+        while (i < j && arr[j] >= pivot) j--;
+
+        // 当while循环停止时，找到了小于pivot的元素（撞到i直接退出外层循环）
+        if (i < j) arr[i++] = arr[j]; // 如果是找到了，就放到左边坑位，i右移一位
         
-        // 3. 从左向右找大于 x 的数
-        while (i < j && a[i] < x) {
-            i++;
-        }
-        // 4. 找到后，把 a[i] 扔到右边的坑 a[j] 里
-        if (i < j) {
-            a[j] = a[i];
-            j--;
-        }
+        // 3. 从左往右找第一个大于 pivot 的元素
+        while (i < j && arr[i] <= pivot) i++;
+        if (i < j) arr[j--] = arr[i]; // 放到右边坑位，j左移一位
     }
-    a[i] = x; // 把基准值填回最后的坑
-    return i;
+        //当循环停止时，即有i == j
+        
+    // 4. 把基准值填入最后的坑位        
+    arr[i] = pivot;        
+    return i; // 返回基准值的最终位置
+}
+
+void quickSort(vector<int>& arr, int left, int right) {
+    if (left >= right) return; // 边界条件：子数组长度为0或1
+    
+    // 获取基准值的位置
+    int pivotIndex = partition(arr, left, right);
+    
+    // 递归排序左半边和右半边
+    quickSort(arr, left, pivotIndex - 1);
+    quickSort(arr, pivotIndex + 1, right);
 }
 ```
+## 复杂度分析
+时间复杂度：最好/平均: O(n logn)
+最坏：O(n^2)，即数组本身已经完全有序
+空间复杂度：O(log n)，最坏O(n)        
+
+## 拓展        
+快排与归并的区别？        
+· 归并排序：先递归划分，然后合并时排序。（ O(n)辅助空间 ）。        
+· 快速排序: 划分时做排序，然后递归处理左右（ O(log n)递归栈空间 ）。        
+快排是“自顶向下”的排序，归并是“自底向上”的排序。         
+
 
 # 线性时间选择        
 ## 算法思路        
@@ -196,6 +242,7 @@ int Select(vector<int>& arr, int left, int right, int k) {
 ```
 
 # 最接近点对问题        
+## 代码演示
 ```c
 #include <algorithm>
 #include <cmath>
@@ -282,30 +329,7 @@ double closestPair(std::vector<Point> pts) {
 *算法时间复杂度：O(nlogn)*        
 
 # 循环赛日程表        
-## 教材反人类代码
-```c        
-void table(int k, int **a){
-    int n = 1;
-    for (int i = 1; i <= k; i++)
-        n *= 2;
-    for (int i = 1; i <= n; i++)
-        a[1][i] = i;
-    int m = 1;
-    for (int s = 1; s <=k; s++){
-    n /= 2;
-    for (int t = 1; t <= n; t++){ 
-      for (int i = m+1; i< 2*m; i++){  //扩展行
-        for (int j = m+1; j <= 2*m; j++){ //扩展列 
-            a[i][j+(t-1)*m*2] = a[i-m][j+(t-1)*m*2-m]; //把左上数据复制到右下角
-            a[i][j+(t-1)*m*2-m] = a[i-m][j+(t-1)*m*2]; //把左下数据复制到右上角
-}
-        m *= 2;
-      }
-    }
-  }
-}
-```
-## 更加清晰的代码
+## 代码演示
 ```c
 #include <iostream>
 using namespace std;
