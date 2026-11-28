@@ -127,6 +127,62 @@ else{
 空间复杂度：O(n^2)。需要一个二维数组来存储整个棋盘。        
 
 
+# 归并排序    
+## 算法思想        
+把数组一分为二，递归地对子数组进行归并排序，把排好序的子数组合并成一个新的有序数组。        
+
+## 代码演示        
+```c
+// 合并两个有序数组 (核心代码)
+void merge(vector<int>& arr, int left, int mid, int right, vector<int>& temp) {
+    int i = left;     // 左半部分的起始指针
+    int j = mid + 1;  // 右半部分的起始指针
+    int k = 0;        // 辅助数组的指针
+
+    // 1. 双指针比较，谁小就把谁放进临时数组
+    while (i <= mid && j <= right) {
+        if (arr[i] <= arr[j]) {
+            temp[k++] = arr[i++];
+        } else {
+            temp[k++] = arr[j++];
+        }
+    }
+
+    // 2. 把左边剩余的元素塞进去
+    while (i <= mid) temp[k++] = arr[i++];
+    
+    // 3. 把右边剩余的元素塞进去
+    while (j <= right) temp[k++] = arr[j++];
+
+    // 4. 把临时数组的数据拷贝回原数组
+    for (int p = 0; p < k; p++) {
+        arr[left + p] = temp[p];
+    }
+}
+
+// 递归拆分
+void mergeSort(vector<int>& arr, int left, int right, vector<int>& temp) {
+    if (left >= right) return; // 边界条件：只有一个元素，自然是有序的
+
+    int mid = left + (right - left) / 2; // 从中间切开
+    
+    // 递归排序左半边
+    mergeSort(arr, left, mid, temp);
+    // 递归排序右半边
+    mergeSort(arr, mid + 1, right, temp);
+    
+    // 合并左右两边
+    merge(arr, left, mid, right, temp);
+}
+```
+## 复杂度分析
+· 时间复杂度：O(n logn) 非常稳定。                
+· 空间复杂度：O(n)，需要temp作为辅助数组。        
+## 拓展                
+求**逆序对**数量：求数组中有多少对数字满足arr[i] > arr[j]且i<j。        
+在merge函数中，当右边数组元素arr[j]被放入temp时，说明左边剩下的所有元素都比arr[j]大。此时逆序对数量直接加上mid-i+1。时间复杂度依然是O(n logn)。        
+
+
 # 快速排序
 ## 代码演示（双指针法）
 ```c    
@@ -168,7 +224,7 @@ void quickSort(vector<int>& arr, int left, int right) {
 ## 复杂度分析
 时间复杂度：最好/平均: O(n logn)
 最坏：O(n^2)，即数组本身已经完全有序
-空间复杂度：O(log n)，最坏O(n)        
+空间复杂度：原地排序，只需要O(log n)栈空间，最坏O(n)        
 
 ## 拓展        
 快排与归并的区别？        
@@ -177,42 +233,24 @@ void quickSort(vector<int>& arr, int left, int right) {
 快排是“自顶向下”的排序，归并是“自底向上”的排序。         
 
 
-# 线性时间选择        
-## 算法思路        
-问题：给定线性序集中n个元素和一个整数k，要求找出这n个元素中第k小的元素。        
+# 线性时间选择（BFPRT算法——中位数的中位数）        
+## 问题描述        
+给定线性序集中n个元素和一个整数k，要求找出这n个元素中第k小的元素。     
+
+## 算法思路
+核心BFPRT算法：        
+1. 将n个元素每5个一组，分成[n/5]组。        
+2. 对每组进行插入排序，找出每组的中位数。        
+3. 取出这[n/5]个中位数。        
+4. 递归滴哦用BFPRT，找出这些中位数的中位数，作为最终的pivot。        
+5. 用这个pivot划分数组，只递归包含第k小元素的那一半。        
+
 ## 代码演示        
 ```c
-// 插入排序 (用于处理小规模子数组)
-void insertionSort(vector<int>& arr, int left, int right) {
-    for (int i = left + 1; i <= right; i++) {
-        int key = arr[i];
-        int j = i - 1;
-        while (j >= left && arr[j] > key) {
-            arr[j + 1] = arr[j];
-            j--;
-        }
-        arr[j + 1] = key;
-    }
-}
-
-// 划分函数 (同快排，返回基准元素最终位置)
-int partition(vector<int>& arr, int left, int right, int pivot) {
-    int i;
-    for (i = left; i < right; i++) {
-        if (arr[i] == pivot) break;
-    }
-    swap(arr[i], arr[right]); // 把基准放到末尾
-
-    int storeIndex = left;
-    for (i = left; i < right; i++) {
-        if (arr[i] < pivot) {
-            swap(arr[i], arr[storeIndex]);
-            storeIndex++;
-        }
-    }
-    swap(arr[storeIndex], arr[right]); // 把基准放到正确位置
-    return storeIndex;
-}
+// 插入排序 (用于处理小规模子数组) = 扑克牌！        
+void insertionSort(vector<int>& arr, int left, int right);        
+// 划分函数 (同快排，返回基准元素最终位置)        
+int partition(vector<int>& arr, int left, int right, int pivot);
 
 // 核心：线性时间选择
 int Select(vector<int>& arr, int left, int right, int k) {
@@ -241,94 +279,118 @@ int Select(vector<int>& arr, int left, int right, int k) {
     else return Select(arr, pos + 1, right, k - num);
 ```
 
-# 最接近点对问题        
+## 复杂度分析
+通过不完全排序，将时间复杂度降到了线性；只递归处理目标所在的那一边。                        
+Quickselect算法：复杂度是O(n)，最坏O(n^2)，即数组已经有序。                    
+BFPRT算法：绝对O(n)。        
+
+
+# 最接近点对问题
+## 问题描述
+给定平面上n个点，找出其中距离最近的两个点。        
+
+## 算法思想        
+分治法：
+1. 用一条直线将点集分为左右两半（SL，SR）。保证两边点数大致相等。
+2. 递归地在左半边找最小距离dL，在右半边找最小距离dR。
+3. 令d = min(dL,dR)。
+**如何找跨越中线的点对？**
+1、以中线L为中心，划分出一个宽度为2d的带状区域。        
+2、只有落在这个区域内的点，才有可能产生小于d的距离。
+3、鸽巢原理：将带状区域划分为便成为d/2的网格。每个网格内最多只能有 1 个点（否则内部距离就小于d了）。对于带状区域内的任意一个点p，它只需要与按y坐标排序后的紧邻的 7 个点进行比较，就能找到最小距离。
+
 ## 代码演示
 ```c
-#include <algorithm>
-#include <cmath>
-#include <limits>
-#include <numeric>
+#include <iostream>
 #include <vector>
+#include <cmath>
+#include <algorithm>
 
-struct Point { double x, y; };
+using namespace std;
 
-static inline double dist2(const Point& a, const Point& b) {
-    double dx = a.x - b.x, dy = a.y - b.y;
-    return dx * dx + dy * dy;          // 全程比较平方，最后只开一次方
+struct Point {
+    double x, y;
+};
+
+// 按 x 坐标排序
+bool cmpX(const Point& a, const Point& b) { return a.x < b.x; }
+// 按 y 坐标排序
+bool cmpY(const Point& a, const Point& b) { return a.y < b.y; }
+
+// 计算两点距离
+double dist(const Point& a, const Point& b) {
+    return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
-// px[l..r) 已按 x 升序；py 存放 px[l..r) 的下标且已按 y 升序。
-// 返回该区间内最近点对距离的平方。
-double closestPairRec(const std::vector<Point>& px, int l, int r,
-                      std::vector<int>& py) {
-    const double INF = std::numeric_limits<double>::infinity();
-    int n = r - l;
-
-    // 规模小直接暴力，同时把 py 排好（保证返回时契约仍成立）
-    if (n <= 3) {
-        double best = INF;
-        for (int i = l; i < r; ++i)
-            for (int j = i + 1; j < r; ++j)
-                best = std::min(best, dist2(px[i], px[j]));
-        std::sort(py.begin(), py.end(),
-                  [&](int a, int b) { return px[a].y < px[b].y; });
-        return best;
+// 分治法核心
+double closestPair(vector<Point>& px, vector<Point>& py, int left, int right) {
+    // 1. 基础情况：2个或3个点，直接暴力算
+    if (right - left <= 2) {
+        double min_d = 1e18;
+        for (int i = left; i <= right; i++) {
+            for (int j = i + 1; j <= right; j++) {
+                min_d = min(min_d, dist(px[i], px[j]));
+            }
+        }
+        return min_d;
     }
 
-    int m = l + n / 2;          // px[m] 是右半边的第一个点
-    double midx = px[m].x;      // 分割线
+    // 2. 分：用中线把点集分成左右两半
+    int mid = left + (right - left) / 2;
+    double mid_x = px[mid].x;
 
-    // 按归属拆分 py，两份仍按 y 有序
-    std::vector<int> yl, yr;
-    yl.reserve(m - l);
-    yr.reserve(r - m);
-    for (int id : py) (id < m ? yl : yr).push_back(id);
+    // 递归求解左右两边的最小距离
+    double d_left = closestPair(px, py, left, mid);
+    double d_right = closestPair(px, py, mid + 1, right);
+    double d = min(d_left, d_right);
 
-    double d = std::min(closestPairRec(px, l, m, yl),
-                        closestPairRec(px, m, r, yr));
-
-    // 归并回 py：整体重新按 y 有序
-    std::merge(yl.begin(), yl.end(), yr.begin(), yr.end(), py.begin(),
-               [&](int a, int b) { return px[a].y < px[b].y; });
-
-    // 只保留严格落在宽 2d 条带内的点
-    std::vector<int> strip;
-    strip.reserve(py.size());
-    for (int id : py) {
-        double dx = px[id].x - midx;
-        if (dx * dx < d) strip.push_back(id);
-    }
-
-    // 条带内每个点只需向后看常数个（y 差一旦 >= d 就可以停）
-    for (size_t i = 0; i < strip.size(); ++i) {
-        for (size_t j = i + 1; j < strip.size(); ++j) {
-            double dy = px[strip[j]].y - px[strip[i]].y;
-            if (dy * dy >= d) break;               // 关键：break 不是 continue
-            d = std::min(d, dist2(px[strip[i]], px[strip[j]]));
+    // 3. 合：收集落在带状区域 [mid_x - d, mid_x + d] 内的点
+    vector<Point> strip;
+    for (int i = left; i <= right; i++) {
+        if (abs(px[i].x - mid_x) < d) {
+            strip.push_back(px[i]);
         }
     }
+
+    // 将带状区域内的点按 y 坐标排序
+    sort(strip.begin(), strip.end(), cmpY);
+
+    // 4. 检查带状区域内的点对（最多检查 7 个相邻点）
+    for (int i = 0; i < strip.size(); i++) {
+        for (int j = i + 1; j < strip.size() && (strip[j].y - strip[i].y) < d; j++) {
+            d = min(d, dist(strip[i], strip[j]));
+        }
+    }
+
     return d;
 }
 
-// 返回最近点对距离；n < 2 返回 -1
-double closestPair(std::vector<Point> pts) {
-    int n = (int)pts.size();
-    if (n < 2) return -1.0;
+int main() {
+    // 测试数据
+    vector<Point> points = {{2, 3}, {12, 30}, {40, 50}, {5, 1}, {12, 10}, {3, 4}};
+    int n = points.size();
 
-    std::sort(pts.begin(), pts.end(),
-              [](const Point& a, const Point& b) { return a.x < b.x; });
+    vector<Point> px = points;
+    // py 其实不需要每次从头排，但为了简单先用全局按 x 排
+    sort(px.begin(), px.end(), cmpX);
+    
+    vector<Point> py = px;
 
-    std::vector<int> py(n);
-    std::iota(py.begin(), py.end(), 0);
-    std::sort(py.begin(), py.end(),
-              [&](int a, int b) { return pts[a].y < pts[b].y; });
-
-    return std::sqrt(closestPairRec(pts, 0, n, py));
+    cout << "最近点对距离: " << closestPair(px, py, 0, n - 1) << endl;
+    return 0;
 }
 ```
-*算法时间复杂度：O(nlogn)*        
+
+## 复杂度分析        
+时间复杂度：O(nlogn)。递归树深度O(log n)，每一层需要O(n)的扫描。                       
+空间复杂度：O(n)。主要是递归栈和辅助数组。        
+
 
 # 循环赛日程表        
+## 问题描述
+有n = 2^k个选手参加网球循环赛。
+要求：每个选手必须与其他n-1个选手各赛一场；每个选手每天只能赛一场；循环赛一共进行n-1天。        
+
 ## 代码演示
 ```c
 #include <iostream>
@@ -373,7 +435,5 @@ void solve(int x, int y, int n) {
 }
 ```
 
-
-
-
-
+## 复杂度分析
+时间复杂度：T(n) = 4T(n/2) + O(n^2) 解得：O(n^2)——最终填满一个n × n的表格，达到了理论最优。                      空间复杂度：O(n^2)表格。          
