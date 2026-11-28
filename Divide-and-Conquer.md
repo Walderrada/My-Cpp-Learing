@@ -38,9 +38,9 @@ T(n) = 4T(n/2) + O(n) , n>1
 得T(n) = O(n^2) 效率并未提升                 
 
 ## 优化计算                            
-**核心数学变形（Karatsuba算法）：AD + BC = (A+B) × (C+D) − AC − BD**                
-写成另一种形式:             
-*XY = AC * 2^n  + ( (A-B)(D-C) + AC + BD ) * 2^(n/2) + BD*  
+核心数学变形（Karatsuba算法）：AD + BC = (A-B) × (C-D) + AC + BD                
+写成另一种形式:                     
+**XY = AC * 2^n  + ( (A-B)(D-C) + AC + BD ) * 2^(n/2) + BD**        
 
 ## 复杂度分析        
 只需要做3次乘法( AC, BD, (A-B)(D-C) )、6次减法和两次移位            
